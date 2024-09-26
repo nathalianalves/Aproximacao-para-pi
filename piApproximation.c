@@ -54,9 +54,9 @@ double aproxPi(double errorMargin, unsigned int *iterations, double *lastPi) {
 }
 
 int main() {
-  uint64_t ulpD, uPiUp, uPiDown;
+  uint64_t ulpD, uPiUp, uPiDown, uApproxError, uExactError;
   unsigned int iterations;
-  double errorMargin, lastPi, piUp, piDown;
+  double errorMargin, lastPi, piUp, piDown, approximateError, exactError;
 
   scanf("%le", &errorMargin);
 
@@ -67,17 +67,23 @@ int main() {
   // Calcula pi efetuando todos os arredondamentos para cima
   fesetround(FE_UPWARD);
   piUp = aproxPi(errorMargin, &iterations, &lastPi);
-
-  // Copia piUp e piDown para serem tratados como inteiros de 64 bits
+  
+  // Copia variáveis necessárias (piDown e piUp) para serem tratadas como inteiros de 64 bits
   memcpy(&uPiDown, &piDown, sizeof(double));
   memcpy(&uPiUp, &piUp, sizeof(double));
 
-  // Calcula a diferença de ULPs entre piUp e piDown
+  // Configura variáveis auxiliares para impressão
+  approximateError = fabs(piUp - lastPi);
+  exactError = fabs(M_PI - piUp);
   ulpD = ulpDifference(uPiUp, uPiDown);
 
+  // Copia variáveis necessárias (approximateError e exactError) para serem tratadas como inteiros de 64 bits
+  memcpy(&uApproxError, &approximateError, sizeof(double));
+  memcpy(&uExactError, &exactError, sizeof(double));
+
   printf("%d\n", iterations); // Imprime a quantidade de iterações utilizada
-  printf("%.15e\n", fabs(piUp - lastPi)); // Imprime o erro absoluto aproximado
-  printf("%.15e\n", fabs(M_PI - piUp)); // Imprime o erro absoluto "exato"
+  printf("%.15e %lx\n", approximateError, uApproxError); // Imprime o erro absoluto aproximado
+  printf("%.15e %lx\n", exactError, uExactError); // Imprime o erro absoluto "exato"
   printf("%.15e %lx\n", piDown, uPiDown); // Imprime a aproximação de pi - arredondamentos para baixo
   printf("%.15e %lx\n", piUp, uPiUp); // Imprime a aproximação de pi - arredondamentos para cima
   printf("%ld\n", ulpD); // Imprime a diferença de ULPs entre piUp e piDown
