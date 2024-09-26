@@ -1,7 +1,12 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 #include <math.h>
 #include <fenv.h>
 
+#define _USE_MATH_DEFINES
+
+// Retorna a fatorial de num
 double factorial(double num) {
   double fac;
 
@@ -15,26 +20,20 @@ double factorial(double num) {
   return fac;
 }
 
-/*double calculaPi(int iteracoes) {
-  double pi_2, pi_2_ant;
-  double fatorial_i, fatorial_2i;
+// Retorna a diferença de ULPs entre num1 e num2
+uint64_t ulpDifference(uint64_t uNum1, uint64_t uNum2) {
+  if (uNum1 == uNum2)
+    return 0;
 
-  pi_2 = 0;
-  pi_2_ant = 0;
-  for (int i = 0; i <= iteracoes; i++) {
-    pi_2_ant = pi_2;
-    fatorial_i = factorial(i);
-    fatorial_2i = factorial(2 * i + 1);
-    pi_2 += ((pow(2, i) * fatorial_i * fatorial_i) / fatorial_2i);
-    printf("aproximação atual - aproximação anterior = %.50lf\n", pi_2 - pi_2_ant);
-  }
+  if (uNum1 < uNum2) 
+    return uNum2 - uNum1;
+  else 
+    return uNum1 - uNum2;
+}
 
-  printf("Com %d iterações, a aproximação para pi/2 foi (pi * 2): %.15e\n", iteracoes, pi_2 * 2);
-
-  return pi_2;
-}*/
-
-double aproxPiMargin(double errorMargin, unsigned int *iterations) {
+// Retorna a aproximação de pi com a margem de erro <= errorMargin
+// *iterations armazena a quantidade de iterações feitas e *lastPi armazena a última aproximação calculada antes da retornada 
+double aproxPi(double errorMargin, unsigned int *iterations, double *lastPi) {
   double pi, prevPi, factorialAux1, factorialAux2;
 
   *iterations = 0;
@@ -44,27 +43,44 @@ double aproxPiMargin(double errorMargin, unsigned int *iterations) {
     prevPi = pi;
     factorialAux1 = factorial(*iterations);
     factorialAux2 = factorial(2 * (*iterations) + 1);
-    pi += ((pow(2, *iterations) * factorialAux1 * factorialAux1) / factorialAux2);
+    pi += ((pow(2, *iterations) * factorialAux1 * factorialAux1) / factorialAux2) * 2;
     (*iterations)++;
   } while ((pi - prevPi) > errorMargin);
 
-  pi = pi * 2;
+  *lastPi = prevPi;
+  pi = pi;
+
   return pi;
 }
 
 int main() {
+  uint64_t ulpD, uPiUp, uPiDown;
   unsigned int iterations;
-  double pi, errorMargin;
+  double errorMargin, lastPi, piUp, piDown;
 
-  fesetround(FE_UPWARD);
-  //pi = calculaPi(iteracoes);
-
-  printf("Digite a tolerância: ");
   scanf("%le", &errorMargin);
 
-  pi = aproxPiMargin(errorMargin, &iterations);
-  printf("%.15e\n", pi);
-  printf("%d\n", iterations);
+  // Calcula pi efetuando todos os arredondamentos para baixo
+  fesetround(FE_DOWNWARD);
+  piDown = aproxPi(errorMargin, &iterations, &lastPi);
 
+  // Calcula pi efetuando todos os arredondamentos para cima
+  fesetround(FE_UPWARD);
+  piUp = aproxPi(errorMargin, &iterations, &lastPi);
+
+  // Copia piUp e piDown para serem tratados como inteiros de 64 bits
+  memcpy(&uPiDown, &piDown, sizeof(double));
+  memcpy(&uPiUp, &piUp, sizeof(double));
+
+  // Calcula a diferença de ULPs entre piUp e piDown
+  ulpD = ulpDifference(uPiUp, uPiDown);
+
+  printf("%d\n", iterations); // Imprime a quantidade de iterações utilizada
+  printf("%.15e\n", fabs(piUp - lastPi)); // Imprime o erro absoluto aproximado
+  printf("%.15e\n", fabs(M_PI - piUp)); // Imprime o erro absoluto "exato"
+  printf("%.15e %lx\n", piDown, uPiDown); // Imprime a aproximação de pi - arredondamentos para baixo
+  printf("%.15e %lx\n", piUp, uPiUp); // Imprime a aproximação de pi - arredondamentos para cima
+  printf("%ld\n", ulpD); // Imprime a diferença de ULPs entre piUp e piDown
+ 
   return 0;
 }
