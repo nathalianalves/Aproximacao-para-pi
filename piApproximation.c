@@ -66,6 +66,7 @@ int main() {
   floatingPointOperationsDown = 0;
   floatingPointOperationsUp = 0;
 
+  printf("Digite a tolerância de erro desejada: ");
   scanf("%le", &errorMargin);
 
   // Calcula pi efetuando todos os arredondamentos para baixo
@@ -89,13 +90,13 @@ int main() {
   memcpy(&uApproxError, &approximateError, sizeof(double));
   memcpy(&uExactError, &exactError, sizeof(double));
 
-  printf("%d\n", iterations); // Imprime a quantidade de iterações utilizada
-  printf("%.15e %lX\n", approximateError, uApproxError); // Imprime o erro absoluto aproximado
-  printf("%.15e %lX\n", exactError, uExactError); // Imprime o erro absoluto "exato"
-  printf("%.15e %lX\n", piDown, uPiDown); // Imprime a aproximação de pi - arredondamentos para baixo
-  printf("%.15e %lX\n", piUp, uPiUp); // Imprime a aproximação de pi - arredondamentos para cima
-  printf("%ld\n", ulpD); // Imprime a diferença de ULPs entre piUp e piDown
-  printf("%ld\n", floatingPointOperationsUp);
+  printf("\nIterações: %d\n", iterations); // Imprime a quantidade de iterações utilizada
+  printf("Erro absoluto aproximado: %.15e %lX\n", approximateError, uApproxError); // Imprime o erro absoluto aproximado
+  printf("Erro absoluto 'exato': %.15e %lX\n", exactError, uExactError); // Imprime o erro absoluto "exato"
+  printf("Pi (baixo): %.15e %lX\n", piDown, uPiDown); // Imprime a aproximação de pi - arredondamentos para baixo
+  printf("Pi (cima): %.15e %lX\n", piUp, uPiUp); // Imprime a aproximação de pi - arredondamentos para cima
+  printf("Diferença de ULPs: %ld\n", ulpD); // Imprime a diferença de ULPs entre piUp e piDown
+  printf("Número de operações de ponto-flutuante: %ld\n", floatingPointOperationsUp); // Imprime a quantidade de operações em variáveis double 
 
   return 0;
 }
