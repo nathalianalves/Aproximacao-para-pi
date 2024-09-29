@@ -6,21 +6,7 @@
 
 #define _USE_MATH_DEFINES
 
-// Retorna a fatorial de num
-double factorial(double num) {
-  double fac;
-
-  if ((num == 0) || (num == 1))
-    return 1;
-  
-  fac = 1;
-  for (int i = 2; i <= num; i++)
-    fac = fac * i;
-
-  return fac;
-}
-
-// Retorna a diferença de ULPs entre num1 e num2
+// Retorna a diferença de ULPs entre uNum1 e uNum2
 uint64_t ulpDifference(uint64_t uNum1, uint64_t uNum2) {
   if (uNum1 == uNum2)
     return 0;
@@ -31,24 +17,42 @@ uint64_t ulpDifference(uint64_t uNum1, uint64_t uNum2) {
     return uNum1 - uNum2;
 }
 
+// Retorna a fatorial de num
+double factorial(double num, unsigned long int *floatingPointOperations) {
+  double fac;
+
+  if ((num == 0) || (num == 1))
+    return 1;
+  
+  fac = 1;
+  for (int i = 2; i <= num; i++) {
+    fac = fac * i;
+    (*floatingPointOperations)++;
+  }
+
+  return fac;
+}
+
 // Retorna a aproximação de pi com a margem de erro <= errorMargin
 // *iterations armazena a quantidade de iterações feitas e *lastPi armazena a última aproximação calculada antes da retornada 
-double aproxPi(double errorMargin, unsigned int *iterations, double *lastPi) {
+double aproxPi(double errorMargin, unsigned int *iterations, double *lastPi, unsigned long int *floatingPointOperations) {
   double pi, prevPi, factorialAux1, factorialAux2;
-
+  
   *iterations = 0;
   pi = 0;
   prevPi = 0;
   do {
     prevPi = pi;
-    factorialAux1 = factorial(*iterations);
-    factorialAux2 = factorial(2 * (*iterations) + 1);
+   
+    factorialAux1 = factorial(*iterations, floatingPointOperations);
+    factorialAux2 = factorial(2 * (*iterations) + 1, floatingPointOperations);
     pi += ((pow(2, *iterations) * factorialAux1 * factorialAux1) / factorialAux2) * 2;
+    
     (*iterations)++;
+    (*floatingPointOperations) += (3 + (*iterations)); // A conta em si faz 4 operações, e pow(x, y) faz cerca de y-1 multiplicações (4 + iterations - 1)
   } while ((pi - prevPi) > errorMargin);
 
   *lastPi = prevPi;
-  pi = pi;
 
   return pi;
 }
@@ -56,17 +60,21 @@ double aproxPi(double errorMargin, unsigned int *iterations, double *lastPi) {
 int main() {
   uint64_t ulpD, uPiUp, uPiDown, uApproxError, uExactError;
   unsigned int iterations;
+  unsigned long int floatingPointOperationsDown, floatingPointOperationsUp;
   double errorMargin, lastPi, piUp, piDown, approximateError, exactError;
+
+  floatingPointOperationsDown = 0;
+  floatingPointOperationsUp = 0;
 
   scanf("%le", &errorMargin);
 
   // Calcula pi efetuando todos os arredondamentos para baixo
   fesetround(FE_DOWNWARD);
-  piDown = aproxPi(errorMargin, &iterations, &lastPi);
+  piDown = aproxPi(errorMargin, &iterations, &lastPi, &floatingPointOperationsDown);
 
   // Calcula pi efetuando todos os arredondamentos para cima
   fesetround(FE_UPWARD);
-  piUp = aproxPi(errorMargin, &iterations, &lastPi);
+  piUp = aproxPi(errorMargin, &iterations, &lastPi, &floatingPointOperationsUp);
   
   // Copia variáveis necessárias (piDown e piUp) para serem tratadas como inteiros de 64 bits
   memcpy(&uPiDown, &piDown, sizeof(double));
@@ -82,11 +90,12 @@ int main() {
   memcpy(&uExactError, &exactError, sizeof(double));
 
   printf("%d\n", iterations); // Imprime a quantidade de iterações utilizada
-  printf("%.15e %lx\n", approximateError, uApproxError); // Imprime o erro absoluto aproximado
-  printf("%.15e %lx\n", exactError, uExactError); // Imprime o erro absoluto "exato"
-  printf("%.15e %lx\n", piDown, uPiDown); // Imprime a aproximação de pi - arredondamentos para baixo
-  printf("%.15e %lx\n", piUp, uPiUp); // Imprime a aproximação de pi - arredondamentos para cima
+  printf("%.15e %lX\n", approximateError, uApproxError); // Imprime o erro absoluto aproximado
+  printf("%.15e %lX\n", exactError, uExactError); // Imprime o erro absoluto "exato"
+  printf("%.15e %lX\n", piDown, uPiDown); // Imprime a aproximação de pi - arredondamentos para baixo
+  printf("%.15e %lX\n", piUp, uPiUp); // Imprime a aproximação de pi - arredondamentos para cima
   printf("%ld\n", ulpD); // Imprime a diferença de ULPs entre piUp e piDown
- 
+  printf("%ld\n", floatingPointOperationsUp);
+
   return 0;
 }
