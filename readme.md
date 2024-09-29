@@ -1,5 +1,7 @@
 O objetivo do projeto é aproximar pi pelo somatório:
-![Imagem do somatório utilizado] (https://moodle.c3sl.ufpr.br/pluginfile.php/211175/mod_assign/intro/Captura%20de%20tela%20de%202024-09-11%2007-49-02.png)
+<div align="center">
+<img src="/assets/somatorio.png">
+</div>
 
 O cálculo para quando o erro absoluto aproximado (diferença entre a aproximação de pi atual e a anterior) é, no máximo, a tolerância digitada pelo usuário.
 
