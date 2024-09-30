@@ -33,23 +33,69 @@ double factorial(double num, unsigned long int *floatingPointOperations) {
   return fac;
 }
 
+// Faz o cálculo de (k!)^2/((2k + 1)!) de forma mais eficiente. "Divide" o problema em frações menores
+double efficientCalc(double num, unsigned long int *floatingPointOperations) {
+  double numAux, den, div, fac;
+  int num1; // Usado para indicar se a primeira fatorial do numerador acabou. Quando esta acaba, se torna 1 e a segunda fatorial é calculada
+
+  if (num == 0)
+    return 1;
+  
+  if (num == 1)
+    return ((double) 1/6);
+
+  // Inicialização de variáveis utilizadas no loop principal
+  num1 = 0;
+  numAux = num;
+  den = 2 * num + 1;
+  div = 1;
+  fac = 1;
+
+  // Loop principal
+  while (((!num1) || (numAux >= 1)) && (den >= 1)) {
+    if (numAux != den) {
+      div = numAux/den;
+      fac = fac * div;
+      (*floatingPointOperations) += 2;
+    }
+    
+    den--;
+    numAux--;
+    if ((numAux == 0) && (!num1)) {
+      num1 = 1;
+      numAux = num;
+    }
+  }
+
+  if (den > 1) {
+    for (den = den - 1; den >= 1; den--) {
+      div = 1/den;
+      fac = fac * div;
+    }
+  } else if (numAux > 1) {
+    for (numAux = numAux - 1; numAux >= 1; numAux--)
+      fac = fac * num;
+  }
+
+  return fac;
+}
+
 // Retorna a aproximação de pi com a margem de erro <= errorMargin
 // *iterations armazena a quantidade de iterações feitas e *lastPi armazena a última aproximação calculada antes da retornada 
 double aproxPi(double errorMargin, unsigned int *iterations, double *lastPi, unsigned long int *floatingPointOperations) {
-  double pi, prevPi, factorialAux1, factorialAux2;
-  
+  double pi, prevPi, factorialAux;
+
   *iterations = 0;
   pi = 0;
   prevPi = 0;
   do {
     prevPi = pi;
-   
-    factorialAux1 = factorial(*iterations, floatingPointOperations);
-    factorialAux2 = factorial(2 * (*iterations) + 1, floatingPointOperations);
-    pi += ((pow(2, *iterations) * factorialAux1 * factorialAux1) / factorialAux2) * 2;
     
+    factorialAux = efficientCalc(*iterations, floatingPointOperations);
+    pi += pow(2, *iterations) * factorialAux * 2;
+
     (*iterations)++;
-    (*floatingPointOperations) += (3 + (*iterations)); // A conta em si faz 4 operações, e pow(x, y) faz cerca de y-1 multiplicações (4 + iterations - 1)
+    (*floatingPointOperations) += (1 + (*iterations)); // A conta em si faz 4 operações, e pow(x, y) faz cerca de y-1 multiplicações (4 + iterations - 1)
   } while ((pi - prevPi) > errorMargin);
 
   *lastPi = prevPi;
